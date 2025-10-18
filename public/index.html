@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BookVerse - Language Textbooks</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4F46E5', // Rich indigo (more modern than blue)
+                        secondary: '#10B981', // Vibrant teal
+                        dark: '#111827', // Deep dark (softer than black)
+                        light: '#F9FAFB', // Warm white
+                        neutral: '#6B7280', // Muted gray for text
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'card': '0 4px 20px rgba(0, 0, 0, 0.08)', // Soft, natural shadow
+                        'hover': '0 10px 30px rgba(0, 0, 0, 0.12)', // Deeper shadow on hover
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .book-card-hover {
+                @apply transition-all duration-300 hover:shadow-hover hover:-translate-y-2;
+            }
+            .fade-in {
+                animation: fadeIn 0.5s ease-in-out;
+            }
+            .slide-up {
+                animation: slideUp 0.5s ease-out;
+            }
+            .text-balance {
+                text-wrap: balance;
+            }
+            /* Styled scrollbar */
+            .custom-scrollbar::-webkit-scrollbar {
+                width: 8px;
+                height: 8px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-track {
+                background: #f1f5f9;
+                border-radius: 10px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb {
+                background: #cbd5e1;
+                border-radius: 10px;
+                transition: background 0.2s;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                background: #94a3b8;
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Force footer to bottom */
+        html, body {
+            height: 100%;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+        main {
+            flex: 1; /* Pushes footer down */
+        }
+    </style>
+</head>
+<body class="bg-light text-dark custom-scrollbar">
+    <!-- Header with Search and Filters -->
+    <header class="sticky top-0 z-50 bg-white/95 backdrop-blur-sm shadow-sm transition-all duration-300">
+        <div class="container mx-auto px-4 py-4 md:py-5">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6">
+                <!-- Logo -->
+                <div class="flex items-center space-x-3">
+                    <i class="fa fa-book text-primary text-3xl"></i>
+                    <h1 class="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">BookVerse</h1>
+                </div>
+
+                <!-- Search Bar -->
+                <div class="w-full md:w-auto flex-grow max-w-2xl">
+                    <div class="flex w-full gap-2">
+                        <input 
+                            type="text" 
+                            id="search-input" 
+                            placeholder="Search language textbooks..." 
+                            class="flex-grow px-4 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                        >
+                        <button id="search-btn" class="bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-lg transition-all flex items-center gap-1.5 shadow-sm hover:shadow">
+                            <i class="fa fa-search"></i>
+                            <span class="hidden sm:inline">Search</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Language Category Filter (from your CATEGORIES array) -->
+            <div class="mt-5 overflow-x-auto pb-2 scrollbar-hide">
+                <div class="flex gap-2 md:gap-3 min-w-max">
+                    <button class="category-btn bg-primary text-white px-4 py-2 rounded-full text-sm font-medium transition-all" 
+                            data-query="English grammar textbook" data-lang="en">
+                        English
+                    </button>
+                    <button class="category-btn bg-white border border-gray-200 hover:border-primary/30 px-4 py-2 rounded-full text-sm font-medium transition-all" 
+                            data-query="Chinese grammar textbook" data-lang="zh">
+                        中文 (Chinese)
+                    </button>
+                    <button class="category-btn bg-white border border-gray-200 hover:border-primary/30 px-4 py-2 rounded-full text-sm font-medium transition-all" 
+                            data-query="Burmese grammar textbook" data-lang="my">
+                        မြန်မာ (Myanmar)
+                    </button>
+                    <button class="category-btn bg-white border border-gray-200 hover:border-primary/30 px-4 py-2 rounded-full text-sm font-medium transition-all" 
+                            data-query="Japanese grammar textbook" data-lang="ja">
+                        日本語 (Japanese)
+                    </button>
+                    <button class="category-btn bg-white border border-gray-200 hover:border-primary/30 px-4 py-2 rounded-full text-sm font-medium transition-all" 
+                            data-query="Korean grammar textbook" data-lang="ko">
+                        한국어 (Korean)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8 md:py-12">
+        <!-- Results Info -->
+        <div id="results-info" class="mb-8 text-center slide-up">
+            <h2 class="text-xl md:text-2xl font-semibold text-dark" id="results-text">Exploring language textbooks...</h2>
+            <p class="text-neutral text-sm mt-1" id="active-category">Active: All Languages</p>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loading" class="flex justify-center py-16 hidden">
+            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        </div>
+
+        <!-- Books Grid -->
+        <div id="books-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8 mb-12">
+            <!-- Books will be inserted here -->
+        </div>
+
+        <!-- Load More Button -->
+        <div class="flex justify-center mb-8">
+            <button id="load-more" class="bg-white border border-primary text-primary hover:bg-primary hover:text-white px-6 py-2.5 rounded-lg transition-all duration-300 flex items-center gap-2 shadow-sm hover:shadow disabled:opacity-50 disabled:cursor-not-allowed">
+                <span>Load More</span>
+                <i class="fa fa-refresh"></i>
+            </button>
+        </div>
+
+        <!-- No Results Message -->
+        <div id="no-results" class="text-center py-16 hidden fade-in">
+            <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 mb-6">
+                <i class="fa fa-search-minus text-4xl text-gray-300"></i>
+            </div>
+            <h3 class="text-xl font-medium text-neutral">No textbooks found</h3>
+            <p class="text-gray-400 mt-2">Try a different search term or language category</p>
+        </div>
+    </main>
+
+    <!-- Footer (fixed at bottom) -->
+    <footer class="bg-dark text-white py-6">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-3">
+                <div class="flex items-center gap-2">
+                    <i class="fa fa-book text-primary"></i>
+                    <span class="font-medium">BookVerse</span>
+                </div>
+                <p class="text-sm text-gray-400">Powered by Google Books API</p>
+                <p class="text-xs text-gray-500">© 2024 BookVerse. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Your language categories (integrated into UI)
+        const CATEGORIES = [
+            { label: "English", query: "English grammar textbook", lang: "en" },
+            { label: "中文 (Chinese)", query: "Chinese grammar textbook", lang: "zh" },
+            { label: "မြန်မာ (Myanmar)", query: "Burmese grammar textbook", lang: "my" },
+            { label: "日本語 (Japanese)", query: "Japanese grammar textbook", lang: "ja" },
+            { label: "한국어 (Korean)", query: "Korean grammar textbook", lang: "ko" },
+        ];
+
+        // API Configuration
+     
+        let startIndex = 0;
+        let currentQuery = "language grammar textbook"; // Default: all language textbooks
+        let currentLang = ""; // Default: all languages
+        let currentCategoryLabel = "All Languages";
+        let isLoading = false;
+        let totalResults = 0;
+
+        // DOM Elements
+        const booksGrid = document.getElementById('books-grid');
+        const searchInput = document.getElementById('search-input');
+        const searchBtn = document.getElementById('search-btn');
+        const categoryBtns = document.querySelectorAll('.category-btn');
+        const loadMoreBtn = document.getElementById('load-more');
+        const loadingIndicator = document.getElementById('loading');
+        const resultsText = document.getElementById('results-text');
+        const activeCategoryText = document.getElementById('active-category');
+        const noResultsMsg = document.getElementById('no-results');
+
+        // Event Listeners
+        searchBtn.addEventListener('click', handleSearch);
+        searchInput.addEventListener('keypress', (e) => e.key === 'Enter' && handleSearch());
+        categoryBtns.forEach(btn => btn.addEventListener('click', handleCategoryClick));
+        loadMoreBtn.addEventListener('click', loadMoreBooks);
+
+        // Initial load
+        init();
+
+        async function init() {
+            await fetchBooks();
+        }
+
+        // Handle search input
+        function handleSearch() {
+            const query = searchInput.value.trim();
+            if (query) {
+                currentQuery = query;
+                resetAndFetch();
+                activeCategoryText.textContent = `Active: Search for "${query}"`;
+            }
+        }
+
+        // Handle language category button click
+        function handleCategoryClick(e) {
+            const btn = e.currentTarget;
+            // Update button styles (active state)
+            categoryBtns.forEach(b => b.classList.remove('bg-primary', 'text-white'));
+            categoryBtns.forEach(b => b.classList.add('bg-white', 'border', 'border-gray-200', 'hover:border-primary/30'));
+            btn.classList.remove('bg-white', 'border', 'border-gray-200', 'hover:border-primary/30');
+            btn.classList.add('bg-primary', 'text-white');
+
+            // Update current query and language
+            currentQuery = btn.dataset.query;
+            currentLang = btn.dataset.lang;
+            currentCategoryLabel = btn.textContent.trim();
+            
+            // Reset and fetch
+            resetAndFetch();
+            activeCategoryText.textContent = `Active: ${currentCategoryLabel}`;
+        }
+
+        // Reset state before new fetch
+        function resetAndFetch() {
+            startIndex = 0;
+            booksGrid.innerHTML = "";
+            loadMoreBtn.disabled = false;
+            loadMoreBtn.innerHTML = '<span>Load More</span><i class="fa fa-refresh"></i>';
+            fetchBooks();
+        }
+
+        // Fetch books from Google Books API
+       // Fetch books from backend instead of Google API directly
+async function fetchBooks() {
+  if (isLoading) return;
+  isLoading = true;
+  loadingIndicator.classList.remove('hidden');
+  loadMoreBtn.disabled = true;
+
+  try {
+    const url = `/api/books?q=${encodeURIComponent(currentQuery)}&lang=${currentLang}&startIndex=${startIndex}`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (!data.items || data.totalItems === 0) {
+      showNoResults();
+      return;
+    }
+
+    totalResults = data.totalItems;
+    renderResultsInfo();
+    renderBooks(data.items);
+
+    startIndex += 20;
+    if (startIndex >= totalResults || startIndex >= 400) {
+      loadMoreBtn.disabled = true;
+      loadMoreBtn.innerHTML = '<span>No More Books</span><i class="fa fa-check"></i>';
+    } else {
+      loadMoreBtn.disabled = false;
+    }
+  } catch (error) {
+    console.error("Error fetching books:", error);
+    resultsText.textContent = "Failed to load textbooks. Please try again later.";
+  } finally {
+    isLoading = false;
+    loadingIndicator.classList.add('hidden');
+  }
+}
+        // Render books to grid
+        function renderBooks(books) {
+            books.forEach((book, index) => {
+                const volumeInfo = book.volumeInfo;
+                const bookCard = document.createElement('div');
+                bookCard.className = 'bg-white rounded-xl shadow-card overflow-hidden book-card-hover fade-in';
+                // Stagger animation for cards
+                bookCard.style.animationDelay = `${index * 50}ms`;
+
+                // Book cover (with better placeholder)
+                const coverUrl = volumeInfo.imageLinks?.thumbnail || 'https://picsum.photos/seed/bookcover/300/400';
+                
+                // Format publish date (show only year if available)
+                const publishYear = volumeInfo.publishedDate ? volumeInfo.publishedDate.slice(0, 4) : 'Unknown';
+
+                bookCard.innerHTML = `
+                    <div class="relative aspect-[2/3]">
+                        <img src="${coverUrl}" alt="${volumeInfo.title || 'Untitled Book'}" class="w-full h-full object-cover">
+                        <!-- Rating badge -->
+                        ${volumeInfo.averageRating ? `
+                            <div class="absolute top-3 right-3 bg-primary text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 shadow-sm">
+                                <i class="fa fa-star"></i>
+                                <span>${volumeInfo.averageRating.toFixed(1)}</span>
+                            </div>
+                        ` : ''}
+                        <!-- Publish year badge -->
+                        <div class="absolute bottom-3 left-3 bg-white/80 backdrop-blur-sm text-dark text-xs px-2 py-1 rounded-full shadow-sm">
+                            ${publishYear}
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-bold text-lg mb-1 line-clamp-2 h-12 text-balance">${volumeInfo.title || 'Untitled'}</h3>
+                        <p class="text-neutral text-sm mb-2 line-clamp-1">${volumeInfo.authors ? volumeInfo.authors.join(', ') : 'Unknown Author'}</p>
+                        <!-- Publisher (condensed) -->
+                        ${volumeInfo.publisher ? `
+                            <p class="text-gray-400 text-xs mb-3">${volumeInfo.publisher}</p>
+                        ` : ''}
+                        <!-- Description (shorter) -->
+                        <p class="text-gray-500 text-xs line-clamp-2 mb-4">${volumeInfo.description ? volumeInfo.description.slice(0, 100) + '...' : 'No description available.'}</p>
+                        <!-- Details link -->
+                        <a href="${volumeInfo.infoLink}" target="_blank" rel="noopener" class="text-primary hover:text-primary/80 text-sm font-medium flex items-center gap-1 transition-colors">
+                            <span>View Details</span>
+                            <i class="fa fa-external-link text-xs"></i>
+                        </a>
+                    </div>
+                `;
+
+                booksGrid.appendChild(bookCard);
+            });
+        }
+
+        // Update results info text
+        function renderResultsInfo() {
+            noResultsMsg.classList.add('hidden');
+            resultsText.textContent = `Found ${totalResults.toLocaleString()} textbooks for ${currentCategoryLabel}`;
+        }
+
+        // Show no results state
+        function showNoResults() {
+            booksGrid.innerHTML = "";
+            noResultsMsg.classList.remove('hidden');
+            resultsText.textContent = "";
+            loadMoreBtn.disabled = true;
+        }
+
+        // Load more books
+        async function loadMoreBooks() {
+            await fetchBooks();
+        }
+
+        // Header scroll effect (subtler)
+        window.addEventListener('scroll', () => {
+            const header = document.querySelector('header');
+            if (window.scrollY > 50) {
+                header.classList.add('py-3', 'shadow');
+                header.classList.remove('py-4', 'md:py-5', 'shadow-sm');
+            } else {
+                header.classList.add('py-4', 'md:py-5', 'shadow-sm');
+                header.classList.remove('py-3', 'shadow');
+            }
+        });
+    </script>
+</body>
+</html> create a simple server and make it this nodejs express
